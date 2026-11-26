@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient, getAuthenticatedAdmin } from "@/lib/supabase/server";
 import {
   deleteImageFromMedia,
@@ -123,6 +123,7 @@ export async function upsertPostAction(
     return { error: `Gagal menyimpan berita: ${error.message}` };
   }
 
+  updateTag("posts");
   revalidatePath("/");
   revalidatePath("/berita");
   revalidatePath(`/berita/${parsed.data.slug}`);
@@ -163,6 +164,7 @@ export async function deletePostAction(id: string): Promise<PostActionState> {
     await deleteImageFromMedia(existing.cover_image_url);
   }
 
+  updateTag("posts");
   revalidatePath("/");
   revalidatePath("/berita");
   if (existing?.slug) {

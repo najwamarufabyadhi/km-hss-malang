@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { MemberCard } from "@/components/public/MemberCard";
 import { getDivisionsAndMembers } from "@/lib/public-data";
@@ -8,25 +10,67 @@ export const metadata: Metadata = {
     "Susunan pengurus inti dan divisi Kerukunan Mahasiswa Hulu Sungai Selatan wilayah Malang (KM-HSS).",
 };
 
-export default async function StructurePage() {
-  const { divisions, members } = await getDivisionsAndMembers();
+async function StructureContent({
+  searchParamsPromise,
+}: {
+  searchParamsPromise: Promise<{ periode?: string }>;
+}) {
+  const params = await searchParamsPromise;
+  const { divisions, members, periods } = await getDivisionsAndMembers();
 
-  const coreMembers = members.filter((m) => m.is_core);
+  const activePeriod = periods.find((p) => p.is_active) ?? periods[0] ?? null;
+  const selectedPeriod =
+    periods.find((p) => p.id === params.periode) ?? activePeriod;
+
+  const periodMembers = selectedPeriod
+    ? members.filter(
+        (m) => !m.period_id || m.period_id === selectedPeriod.id
+      )
+    : members;
+
+  const coreMembers = periodMembers.filter((m) => m.is_core);
   const divisionGroups = divisions.map((div) => ({
     division: div,
-    members: members.filter((m) => m.division_id === div.id),
+    members: periodMembers.filter((m) => m.division_id === div.id),
   }));
 
   return (
-    <main className="mx-auto max-w-6xl space-y-12 px-4 py-8 sm:px-6 sm:py-10">
-      <header>
-        <h1 className="border-l-4 border-accent pl-3 text-2xl font-extrabold text-foreground sm:text-3xl">
-          Struktur Keanggotaan
-        </h1>
-        <p className="mt-2 text-sm text-muted sm:text-base">
-          Susunan pengurus inti dan divisi aktif Kerukunan Mahasiswa Hulu Sungai
-          Selatan wilayah Malang (KM-HSS).
-        </p>
+    <main className="mx-auto max-w-6xl space-y-10 px-4 py-8 sm:px-6 sm:py-10">
+      <header className="space-y-4">
+        <div>
+          <h1 className="border-l-4 border-accent pl-3 text-2xl font-extrabold text-foreground sm:text-3xl">
+            Struktur Keanggotaan
+          </h1>
+          <p className="mt-2 text-sm text-muted sm:text-base">
+            Susunan pengurus inti dan divisi Kerukunan Mahasiswa Hulu Sungai
+            Selatan wilayah Malang (KM-HSS).
+          </p>
+        </div>
+
+        {periods.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted">
+              Periode:
+            </span>
+            {periods.map((period) => {
+              const isSelected = selectedPeriod?.id === period.id;
+              return (
+                <Link
+                  key={period.id}
+                  href={`/struktur?periode=${period.id}`}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                    isSelected
+                      ? "bg-primary text-white"
+                      : "bg-surface text-foreground hover:text-primary"
+                  }`}
+                >
+                  {period.name}
+                  {period.is_active ? " (Aktif)" : ""}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </header>
 
       {/* Pengurus Inti */}
@@ -89,5 +133,23 @@ export default async function StructurePage() {
         </section>
       ))}
     </main>
+  );
+}
+
+export default function StructurePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ periode?: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-6xl px-4 py-12 text-sm text-muted">
+          Memuat struktur kepengurusan...
+        </div>
+      }
+    >
+      <StructureContent searchParamsPromise={searchParams} />
+    </Suspense>
   );
 }

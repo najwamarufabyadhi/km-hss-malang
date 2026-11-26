@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient, getAuthenticatedAdmin } from "@/lib/supabase/server";
 import { divisionSchema } from "@/lib/validations/schemas";
 
@@ -40,6 +40,7 @@ export async function upsertDivisionAction(
     return { error: `Gagal menyimpan divisi: ${error.message}` };
   }
 
+  updateTag("structure");
   revalidatePath("/");
   revalidatePath("/struktur");
   revalidatePath("/anggota");
@@ -66,6 +67,7 @@ export async function deleteDivisionAction(
     return { error: `Gagal menghapus divisi: ${error.message}` };
   }
 
+  updateTag("structure");
   revalidatePath("/");
   revalidatePath("/struktur");
   revalidatePath("/anggota");

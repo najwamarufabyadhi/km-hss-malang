@@ -42,6 +42,14 @@ export interface Post {
   author_email: string | null;
 }
 
+export interface Period {
+  id: string;
+  name: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface Division {
   id: string;
   name: string;
@@ -55,6 +63,7 @@ export interface Member {
   position: string;
   is_core: boolean;
   division_id: string | null;
+  period_id: string | null;
   photo_url: string | null;
   bio: string;
   social_links: SocialLinks;

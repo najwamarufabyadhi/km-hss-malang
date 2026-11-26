@@ -2,7 +2,7 @@
 
 import { useActionState, useMemo, useState, useTransition } from "react";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
-import type { Division, Member } from "@/types/database";
+import type { Division, Member, Period } from "@/types/database";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import { StatusBanner } from "@/components/admin/StatusBanner";
@@ -17,14 +17,17 @@ const initialState: MemberActionState = {};
 export function MembersManager({
   members,
   divisions,
+  periods,
 }: {
   members: Member[];
   divisions: Division[];
+  periods: Period[];
 }) {
   const [editing, setEditing] = useState<Member | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [search, setSearch] = useState("");
   const [filterDivision, setFilterDivision] = useState("all");
+  const [filterPeriod, setFilterPeriod] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState<Member | null>(null);
   const [deleteResult, setDeleteResult] = useState<MemberActionState>({});
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -33,6 +36,17 @@ export function MembersManager({
     upsertMemberAction,
     initialState
   );
+
+  const activePeriodId = useMemo(
+    () => periods.find((p) => p.is_active)?.id ?? periods[0]?.id ?? "",
+    [periods]
+  );
+
+  const periodMap = useMemo(() => {
+    const map = new Map<string, string>();
+    periods.forEach((p) => map.set(p.id, p.name));
+    return map;
+  }, [periods]);
 
   const divisionMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -51,9 +65,11 @@ export function MembersManager({
         filterDivision === "all" ||
         (filterDivision === "core" && m.is_core) ||
         m.division_id === filterDivision;
-      return matchesQuery && matchesDivision;
+      const matchesPeriod =
+        filterPeriod === "all" || m.period_id === filterPeriod;
+      return matchesQuery && matchesDivision && matchesPeriod;
     });
-  }, [members, search, filterDivision]);
+  }, [members, search, filterDivision, filterPeriod]);
 
   const handleEdit = (member: Member) => {
     setEditing(member);
@@ -171,6 +187,30 @@ export function MembersManager({
               </select>
             </div>
           </div>
+
+          {periods.length > 0 && (
+            <div>
+              <label
+                htmlFor="mem-period"
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
+                Periode Kepengurusan
+              </label>
+              <select
+                id="mem-period"
+                name="period_id"
+                defaultValue={editing?.period_id ?? activePeriodId}
+                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Tanpa Periode</option>
+                {periods.map((per) => (
+                  <option key={per.id} value={per.id}>
+                    {per.name} {per.is_active ? "(Aktif)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-5 pt-1">
             <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-foreground">
@@ -322,6 +362,22 @@ export function MembersManager({
                 </option>
               ))}
             </select>
+
+            {periods.length > 0 && (
+              <select
+                value={filterPeriod}
+                onChange={(e) => setFilterPeriod(e.target.value)}
+                aria-label="Filter periode"
+                className="rounded-lg border border-border bg-white px-3 py-1.5 text-sm outline-none focus:border-primary"
+              >
+                <option value="all">Semua Periode</option>
+                {periods.map((per) => (
+                  <option key={per.id} value={per.id}>
+                    {per.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
@@ -380,6 +436,9 @@ export function MembersManager({
                       <p className="truncate text-xs text-muted">
                         {member.position}
                         {divisionName ? ` · ${divisionName}` : ""}
+                        {member.period_id && periodMap.get(member.period_id)
+                          ? ` · ${periodMap.get(member.period_id)}`
+                          : ""}
                       </p>
                     </div>
                   </div>

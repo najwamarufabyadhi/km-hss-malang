@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient, getAuthenticatedAdmin } from "@/lib/supabase/server";
 import {
   deleteImageFromMedia,
@@ -56,12 +56,14 @@ export async function upsertMemberAction(
   }
 
   const rawDivisionId = String(formData.get("division_id") ?? "").trim();
+  const rawPeriodId = String(formData.get("period_id") ?? "").trim();
 
   const parsed = memberSchema.safeParse({
     full_name: formData.get("full_name"),
     position: formData.get("position"),
     is_core: formData.get("is_core") === "on",
     division_id: rawDivisionId || null,
+    period_id: rawPeriodId || null,
     photo_url: photoUrl,
     bio: formData.get("bio") ?? "",
     social_links: {
@@ -86,6 +88,7 @@ export async function upsertMemberAction(
     return { error: `Gagal menyimpan anggota: ${error.message}` };
   }
 
+  updateTag("structure");
   revalidatePath("/");
   revalidatePath("/struktur");
   revalidatePath("/anggota");
@@ -122,6 +125,7 @@ export async function deleteMemberAction(
     await deleteImageFromMedia(existing.photo_url);
   }
 
+  updateTag("structure");
   revalidatePath("/");
   revalidatePath("/struktur");
   revalidatePath("/anggota");

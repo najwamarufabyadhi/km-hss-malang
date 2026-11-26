@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient, getAuthenticatedAdmin } from "@/lib/supabase/server";
 import {
   deleteImageFromMedia,
@@ -93,6 +93,7 @@ export async function updateProfileAction(
     return { error: `Gagal menyimpan profil: ${error.message}` };
   }
 
+  updateTag("profile");
   revalidatePath("/");
   revalidatePath("/tentang");
   revalidatePath("/admin/profil");

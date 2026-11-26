@@ -19,7 +19,15 @@ export default async function HomePage() {
     getDivisionsAndMembers(),
   ]);
 
-  const coreMembers = structure.members.filter((m) => m.is_core).slice(0, 4);
+  const activePeriod =
+    structure.periods.find((p) => p.is_active) ?? structure.periods[0];
+  const coreMembers = structure.members
+    .filter(
+      (m) =>
+        m.is_core &&
+        (!activePeriod || !m.period_id || m.period_id === activePeriod.id)
+    )
+    .slice(0, 4);
 
   return (
     <>

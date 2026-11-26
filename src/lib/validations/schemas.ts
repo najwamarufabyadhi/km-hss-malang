@@ -44,6 +44,12 @@ export const postSchema = z.object({
   status: z.enum(["draft", "published"]),
 });
 
+export const periodSchema = z.object({
+  name: z.string().trim().min(3, "Nama periode minimal 3 karakter").max(60),
+  is_active: z.boolean(),
+  sort_order: z.number().int().min(0),
+});
+
 export const divisionSchema = z.object({
   name: z.string().trim().min(2, "Nama divisi minimal 2 karakter").max(120),
   description: z.string().trim().max(1000),
@@ -55,6 +61,7 @@ export const memberSchema = z.object({
   position: z.string().trim().min(2, "Jabatan minimal 2 karakter").max(120),
   is_core: z.boolean(),
   division_id: z.string().uuid().nullable().optional(),
+  period_id: z.string().uuid().nullable().optional(),
   photo_url: z.string().trim().url().nullable().optional(),
   bio: z.string().trim().max(1000),
   social_links: socialLinksSchema.optional(),

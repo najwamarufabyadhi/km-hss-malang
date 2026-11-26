@@ -2,18 +2,24 @@
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import type { Division, Member } from "@/types/database";
+import type { Division, Member, Period } from "@/types/database";
 import { MemberCard } from "@/components/public/MemberCard";
 
 export function MembersDirectory({
   members,
   divisions,
+  periods = [],
 }: {
   members: Member[];
   divisions: Division[];
+  periods?: Period[];
 }) {
+  const activePeriod = periods.find((p) => p.is_active) ?? periods[0];
   const [query, setQuery] = useState("");
   const [selectedDivision, setSelectedDivision] = useState("all");
+  const [selectedPeriod, setSelectedPeriod] = useState(
+    activePeriod?.id ?? "all"
+  );
 
   const divisionMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -32,9 +38,13 @@ export function MembersDirectory({
         selectedDivision === "all" ||
         (selectedDivision === "core" && m.is_core) ||
         m.division_id === selectedDivision;
-      return matchesQuery && matchesDivision;
+      const matchesPeriod =
+        selectedPeriod === "all" ||
+        !m.period_id ||
+        m.period_id === selectedPeriod;
+      return matchesQuery && matchesDivision && matchesPeriod;
     });
-  }, [members, query, selectedDivision]);
+  }, [members, query, selectedDivision, selectedPeriod]);
 
   return (
     <div className="space-y-6">
@@ -51,20 +61,38 @@ export function MembersDirectory({
           />
         </div>
 
-        <select
-          value={selectedDivision}
-          onChange={(e) => setSelectedDivision(e.target.value)}
-          aria-label="Filter divisi"
-          className="rounded-lg border border-border bg-white px-3.5 py-2 text-sm outline-none focus:border-primary"
-        >
-          <option value="all">Semua Divisi ({members.length})</option>
-          <option value="core">Pengurus Inti</option>
-          {divisions.map((div) => (
-            <option key={div.id} value={div.id}>
-              {div.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-2">
+          {periods.length > 0 && (
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+              aria-label="Filter periode"
+              className="rounded-lg border border-border bg-white px-3.5 py-2 text-sm outline-none focus:border-primary"
+            >
+              <option value="all">Semua Periode</option>
+              {periods.map((per) => (
+                <option key={per.id} value={per.id}>
+                  Periode {per.name} {per.is_active ? "(Aktif)" : ""}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <select
+            value={selectedDivision}
+            onChange={(e) => setSelectedDivision(e.target.value)}
+            aria-label="Filter divisi"
+            className="rounded-lg border border-border bg-white px-3.5 py-2 text-sm outline-none focus:border-primary"
+          >
+            <option value="all">Semua Divisi ({members.length})</option>
+            <option value="core">Pengurus Inti</option>
+            {divisions.map((div) => (
+              <option key={div.id} value={div.id}>
+                {div.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -73,7 +101,7 @@ export function MembersDirectory({
             Anggota tidak ditemukan
           </p>
           <p className="mt-1 text-sm text-muted">
-            Coba ubah kata kunci pencarian atau pilih divisi lain.
+            Coba ubah kata kunci pencarian atau pilih divisi/periode lain.
           </p>
         </div>
       ) : (

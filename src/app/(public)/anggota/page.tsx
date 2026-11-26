@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MembersPage() {
-  const { members, divisions } = await getDivisionsAndMembers();
+  const { members, divisions, periods } = await getDivisionsAndMembers();
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6 sm:py-10">
@@ -22,7 +22,11 @@ export default async function MembersPage() {
         </p>
       </header>
 
-      <MembersDirectory members={members} divisions={divisions} />
+      <MembersDirectory
+        members={members}
+        divisions={divisions}
+        periods={periods}
+      />
     </main>
   );
 }

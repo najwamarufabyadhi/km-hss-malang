@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2,
+  CalendarRange,
   ExternalLink,
   Layers,
   LayoutDashboard,
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/profil", label: "Profil Organisasi", icon: Building2 },
   { href: "/admin/berita", label: "Berita", icon: Newspaper },
+  { href: "/admin/periode", label: "Periode", icon: CalendarRange },
   { href: "/admin/divisi", label: "Divisi", icon: Layers },
   { href: "/admin/anggota", label: "Anggota", icon: Users },
   { href: "/admin/pengguna", label: "Admin", icon: ShieldCheck },

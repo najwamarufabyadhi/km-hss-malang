@@ -1,9 +1,10 @@
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { createPublicClient } from "@/lib/supabase/public";
 import type {
   Division,
   Member,
   OrganizationProfile,
+  Period,
   Post,
   PostCategory,
 } from "@/types/database";
@@ -152,6 +153,16 @@ const SAMPLE_DIVISIONS: Division[] = [
   },
 ];
 
+const SAMPLE_PERIODS: Period[] = [
+  {
+    id: "period-2026",
+    name: "2026/2027",
+    is_active: true,
+    sort_order: 1,
+    created_at: "2026-11-01T00:00:00Z",
+  },
+];
+
 const SAMPLE_MEMBERS: Member[] = [
   {
     id: "mem-1",
@@ -159,6 +170,7 @@ const SAMPLE_MEMBERS: Member[] = [
     position: "Ketua Umum",
     is_core: true,
     division_id: null,
+    period_id: "period-2026",
     photo_url: null,
     bio: "Mahasiswa Teknik Informatika di Malang asal Kandangan, Hulu Sungai Selatan.",
     social_links: {},
@@ -173,6 +185,7 @@ const SAMPLE_MEMBERS: Member[] = [
     position: "Wakil Ketua Umum",
     is_core: true,
     division_id: null,
+    period_id: "period-2026",
     photo_url: null,
     bio: "Mahasiswa Ilmu Komunikasi yang aktif menggerakkan kolaborasi antar-organisasi daerah.",
     social_links: {},
@@ -187,6 +200,7 @@ const SAMPLE_MEMBERS: Member[] = [
     position: "Sekretaris Umum",
     is_core: true,
     division_id: null,
+    period_id: "period-2026",
     photo_url: null,
     bio: "Bertanggung jawab atas administrasi, surat-menyurat, dan pendataan anggota.",
     social_links: {},
@@ -201,6 +215,7 @@ const SAMPLE_MEMBERS: Member[] = [
     position: "Bendahara Umum",
     is_core: true,
     division_id: null,
+    period_id: "period-2026",
     photo_url: null,
     bio: "Mengelola transparansi keuangan dan program kemandirian dana organisasi.",
     social_links: {},
@@ -215,6 +230,7 @@ const SAMPLE_MEMBERS: Member[] = [
     position: "Koordinator Divisi",
     is_core: false,
     division_id: "div-humas",
+    period_id: "period-2026",
     photo_url: null,
     bio: "Fokus pada desain visual, dokumentasi acara, dan pengelolaan portal berita.",
     social_links: {},
@@ -229,6 +245,7 @@ const SAMPLE_MEMBERS: Member[] = [
     position: "Koordinator Divisi",
     is_core: false,
     division_id: "div-kaderisasi",
+    period_id: "period-2026",
     photo_url: null,
     bio: "Mendampingi adaptasi mahasiswa baru HSS dan merancang program kaderisasi.",
     social_links: {},
@@ -242,6 +259,7 @@ const SAMPLE_MEMBERS: Member[] = [
 export async function getPublicProfile(): Promise<OrganizationProfile> {
   "use cache";
   cacheLife("minutes");
+  cacheTag("profile");
 
   const supabase = createPublicClient();
   if (!supabase) return SAMPLE_PROFILE;
@@ -264,6 +282,8 @@ export async function getPublicProfile(): Promise<OrganizationProfile> {
 export async function getFeaturedPosts(): Promise<Post[]> {
   "use cache";
   cacheLife("minutes");
+  cacheTag("posts");
+  cacheTag("posts");
 
   const supabase = createPublicClient();
   if (!supabase) {
@@ -301,6 +321,7 @@ export async function getPublishedPosts(options?: {
 }): Promise<{ posts: Post[]; total: number }> {
   "use cache";
   cacheLife("minutes");
+  cacheTag("posts");
 
   const page = Math.max(1, options?.page ?? 1);
   const limit = options?.limit ?? 9;
@@ -349,6 +370,7 @@ export async function getPublishedPosts(options?: {
 export async function getPostBySlug(slug: string): Promise<Post | null> {
   "use cache";
   cacheLife("minutes");
+  cacheTag("posts");
 
   const supabase = createPublicClient();
   if (!supabase) {
@@ -371,6 +393,7 @@ export async function getRelatedPosts(
 ): Promise<Post[]> {
   "use cache";
   cacheLife("minutes");
+  cacheTag("posts");
 
   const supabase = createPublicClient();
   if (!supabase) {
@@ -391,16 +414,22 @@ export async function getRelatedPosts(
 export async function getDivisionsAndMembers(): Promise<{
   divisions: Division[];
   members: Member[];
+  periods: Period[];
 }> {
   "use cache";
   cacheLife("minutes");
+  cacheTag("structure");
 
   const supabase = createPublicClient();
   if (!supabase) {
-    return { divisions: SAMPLE_DIVISIONS, members: SAMPLE_MEMBERS };
+    return {
+      divisions: SAMPLE_DIVISIONS,
+      members: SAMPLE_MEMBERS,
+      periods: SAMPLE_PERIODS,
+    };
   }
 
-  const [divRes, memRes] = await Promise.all([
+  const [divRes, memRes, perRes] = await Promise.all([
     supabase.from("divisions").select("*").order("sort_order", { ascending: true }),
     supabase
       .from("members")
@@ -408,11 +437,13 @@ export async function getDivisionsAndMembers(): Promise<{
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .order("full_name", { ascending: true }),
+    supabase.from("periods").select("*").order("sort_order", { ascending: true }),
   ]);
 
   return {
     divisions: (divRes.data as Division[] | null) ?? [],
     members: (memRes.data as Member[] | null) ?? [],
+    periods: (perRes.data as Period[] | null) ?? [],
   };
 }
 
@@ -421,6 +452,7 @@ export async function getMemberById(
 ): Promise<{ member: Member | null; division: Division | null }> {
   "use cache";
   cacheLife("minutes");
+  cacheTag("structure");
 
   const supabase = createPublicClient();
   if (!supabase) {
